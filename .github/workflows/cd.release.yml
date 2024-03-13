@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-  release:
-    types: [published]
+    tags:
+      - 'v*'
 
 jobs:
-  push:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +26,7 @@ jobs:
         id: metadata
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/pandapush
+          flavor: latest=auto
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -35,7 +36,7 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name == 'release' }}
+          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
